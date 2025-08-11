@@ -1,0 +1,11 @@
+{
+  "current_node": "gross1",
+  "history": [
+    {
+      "node": "start",
+      "avg_net": 14.4,
+      "avg_acc": 69.3,
+      "result": "fail"
+    }
+  ]
+}

@@ -65,6 +65,12 @@ function finishRun(summary){
 
 document.getElementById('start').addEventListener('click', startRun);
 document.getElementById('submit').addEventListener('click', submitPrompt);
+document.getElementById('typed').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    submitPrompt();
+  }
+});
 </script>
 {% endblock %}
 

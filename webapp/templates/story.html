@@ -109,6 +109,12 @@ async function choose(label, next_id){
 document.getElementById('start').addEventListener('click', startChapter);
 document.getElementById('reset').addEventListener('click', resetProgress);
 document.getElementById('submit').addEventListener('click', submitPrompt);
+document.getElementById('typed').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    submitPrompt();
+  }
+});
 loadCurrent();
 </script>
 {% endblock %}

@@ -70,6 +70,12 @@ async function finishRun(){
 
 document.getElementById('start').addEventListener('click', startBoss);
 document.getElementById('next').addEventListener('click', nextPrompt);
+document.getElementById('typed').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    nextPrompt();
+  }
+});
 </script>
 {% endblock %}
 

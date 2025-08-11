@@ -1,0 +1,14 @@
+[
+  {
+    "timestamp": 1754880381,
+    "mode": "Story: start",
+    "net_wpm": 14.41,
+    "accuracy_pct": 69.3
+  },
+  {
+    "timestamp": 1754880518,
+    "mode": "Word Drills",
+    "net_wpm": 30.49,
+    "accuracy_pct": 90.0
+  }
+]
