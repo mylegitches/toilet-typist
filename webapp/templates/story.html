@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Story Mode</h2>
+  <div class="panel">
+    <div id="info" class="muted">Loading current chapter…</div>
+    <div id="setup" class="row">
+      <button id="start" class="btn">Start Chapter</button>
+      <button id="reset" class="btn btn-secondary">Reset Progress</button>
+    </div>
+    <div id="play" class="hidden">
+      <div class="progress"><span id="round_label"></span></div>
+      <pre id="prompt" class="prompt"></pre>
+      <textarea id="typed" rows="3" class="input" placeholder="Type here and press Submit"></textarea>
+      <div class="row">
+        <button id="submit" class="btn">Submit</button>
+      </div>
+      <div id="result" class="muted"></div>
+    </div>
+    <div id="narrative" class="hidden"></div>
+    <div id="choices" class="hidden"></div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let startTime = 0;
+function now(){ return performance.now(); }
+
+async function loadCurrent(){
+  const r = await fetch('/api/story/current');
+  const data = await r.json();
+  if(data.error){
+    document.getElementById('info').textContent = 'Story node missing. Try Reset Progress.';
+  } else {
+    document.getElementById('info').textContent = `${data.node.title} — Lesson keys: ${data.node.lesson_keys.split('').join(' ')}`;
+  }
+}
+
+async function resetProgress(){
+  await fetch('/api/story/reset', {method:'POST'});
+  await loadCurrent();
+}
+
+async function startChapter(){
+  const r = await fetch('/api/story/start', {method:'POST'});
+  const data = await r.json();
+  if(!data.ok){ return; }
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('play').classList.remove('hidden');
+  await nextPrompt();
+}
+
+async function nextPrompt(){
+  const r = await fetch('/api/story/next');
+  const data = await r.json();
+  if(data.done){ return; }
+  document.getElementById('round_label').textContent = `Round ${data.round}/${data.rounds}`;
+  document.getElementById('prompt').textContent = data.prompt;
+  document.getElementById('typed').value = '';
+  document.getElementById('typed').focus();
+  document.getElementById('result').textContent = '';
+  startTime = now();
+}
+
+async function submitPrompt(){
+  const typed = document.getElementById('typed').value;
+  const seconds = (now() - startTime) / 1000.0;
+  const r = await fetch('/api/story/submit', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({typed, seconds})});
+  const data = await r.json();
+  if(!data.done){
+    const s = data.stats;
+    document.getElementById('result').textContent = `Time ${s.seconds.toFixed(1)}s | Gross ${s.gross_wpm.toFixed(1)} | Acc ${s.accuracy_pct.toFixed(1)}% | Net ${s.net_wpm.toFixed(1)} — ${data.comment}`;
+    return nextPrompt();
+  }
+
+  document.getElementById('play').classList.add('hidden');
+  const nar = document.getElementById('narrative');
+  nar.classList.remove('hidden');
+
+  if(data.chapter_result === 'end'){
+    nar.textContent = `${data.success_text} — The story concludes for now. Congrats!`;
+    document.getElementById('choices').classList.add('hidden');
+  } else if(data.chapter_result === 'passed'){
+    nar.textContent = `${data.success_text}`;
+    const choices = document.getElementById('choices');
+    choices.innerHTML = '';
+    data.choices.forEach(([label, next_id]) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.textContent = label;
+      btn.addEventListener('click', () => choose(label, next_id));
+      choices.appendChild(btn);
+    });
+    choices.classList.remove('hidden');
+  } else if(data.chapter_result === 'failed'){
+    nar.textContent = `${data.failure_text}`;
+    document.getElementById('choices').classList.add('hidden');
+  }
+}
+
+async function choose(label, next_id){
+  await fetch('/api/story/choose', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({label, next_id})});
+  document.getElementById('narrative').classList.add('hidden');
+  document.getElementById('choices').classList.add('hidden');
+  document.getElementById('setup').classList.remove('hidden');
+  await loadCurrent();
+}
+
+document.getElementById('start').addEventListener('click', startChapter);
+document.getElementById('reset').addEventListener('click', resetProgress);
+document.getElementById('submit').addEventListener('click', submitPrompt);
+loadCurrent();
+</script>
+{% endblock %}
+
+

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>High Scores</h2>
+  <div class="panel">
+    <table class="table" id="scores"></table>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadScores(){
+  const r = await fetch('/api/scores/last');
+  const data = await r.json();
+  const table = document.getElementById('scores');
+  table.innerHTML = '<tr><th>When</th><th>Mode</th><th>Net WPM</th><th>Acc%</th></tr>';
+  (data.scores || []).forEach(s => {
+    const when = new Date((s.timestamp || 0) * 1000).toLocaleString();
+    const row = document.createElement('tr');
+    row.innerHTML = `<td>${when}</td><td>${s.mode || ''}</td><td>${s.net_wpm || 0}</td><td>${s.accuracy_pct || 0}</td>`;
+    table.appendChild(row);
+  });
+}
+loadScores();
+</script>
+{% endblock %}
+
+

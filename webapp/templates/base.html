@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Toilet Typist</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  </head>
+  <body>
+    <nav class="nav">
+      <a href="{{ url_for('index') }}" class="brand">🚽 Toilet Typist</a>
+      <a href="{{ url_for('drills_page') }}">Word Drills</a>
+      <a href="{{ url_for('sprints_page') }}">Sentence Sprints</a>
+      <a href="{{ url_for('boss_page') }}">Boss Battle</a>
+      <a href="{{ url_for('story_page') }}">Story Mode</a>
+      <a href="{{ url_for('scores_page') }}">Scores</a>
+    </nav>
+    <main class="container">
+      {% block content %}{% endblock %}
+    </main>
+    <footer class="footer">Made with 💩 and 😄</footer>
+    {% block scripts %}{% endblock %}
+  </body>
+  </html>
+
+

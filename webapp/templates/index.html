@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block content %}
+  <section class="hero">
+    <h1>The Witty Typing Trainer</h1>
+    <p>Where typos get flushed and WPM goes up.</p>
+    <form method="post" action="{{ url_for('toggle_potty') }}">
+      <button class="btn" type="submit">
+        Toggle Potty Humor: {{ 'ON' if potty_mode else 'OFF' }}
+      </button>
+    </form>
+  </section>
+  <section class="grid">
+    <a class="card" href="{{ url_for('drills_page') }}">
+      <h3>Word Drills →</h3>
+      <p>Quick rounds from themed word banks.</p>
+    </a>
+    <a class="card" href="{{ url_for('sprints_page') }}">
+      <h3>Sentence Sprints →</h3>
+      <p>Practice full sentences for flow and rhythm.</p>
+    </a>
+    <a class="card" href="{{ url_for('boss_page') }}">
+      <h3>Boss Battle →</h3>
+      <p>60 seconds of speed and accuracy.</p>
+    </a>
+    <a class="card" href="{{ url_for('story_page') }}">
+      <h3>Story Mode →</h3>
+      <p>Branching lessons with choices and consequences.</p>
+    </a>
+  </section>
+{% endblock %}
+
+

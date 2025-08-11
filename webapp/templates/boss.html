@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Boss Battle (60s)</h2>
+  <div class="panel">
+    <div id="setup">
+      <label>Duration (s): <input id="duration" type="number" min="10" max="180" value="60" /></label>
+      <button id="start" class="btn">Start</button>
+    </div>
+    <div id="play" class="hidden">
+      <div class="progress">Time left: <span id="remaining"></span>s</div>
+      <pre id="prompt" class="prompt"></pre>
+      <textarea id="typed" rows="3" class="input" placeholder="Type and press Next"></textarea>
+      <div class="row">
+        <button id="next" class="btn">Next</button>
+      </div>
+    </div>
+    <div id="summary" class="hidden"></div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let timerId = null;
+
+async function startBoss(){
+  const duration = parseInt(document.getElementById('duration').value || '60', 10);
+  await fetch('/api/boss/start', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({duration})});
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('play').classList.remove('hidden');
+  await nextPrompt();
+  tick();
+}
+
+async function nextPrompt(){
+  // submit previous
+  const typed = document.getElementById('typed').value;
+  if(typed){ await fetch('/api/boss/submit', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({typed})}); }
+  document.getElementById('typed').value = '';
+  const r = await fetch('/api/boss/next');
+  const data = await r.json();
+  if(data.done){ return finishRun(); }
+  document.getElementById('prompt').textContent = data.prompt;
+  document.getElementById('remaining').textContent = data.remaining;
+  document.getElementById('typed').focus();
+}
+
+async function tick(){
+  const r = await fetch('/api/boss/next');
+  const data = await r.json();
+  if(data.done){ return finishRun(); }
+  document.getElementById('prompt').textContent = data.prompt;
+  document.getElementById('remaining').textContent = data.remaining;
+  timerId = setTimeout(tick, 1000);
+}
+
+async function finishRun(){
+  if(timerId){ clearTimeout(timerId); timerId = null; }
+  // final submit to compute summary
+  const typed = document.getElementById('typed').value;
+  const r = await fetch('/api/boss/submit', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({typed})});
+  const data = await r.json();
+  document.getElementById('play').classList.add('hidden');
+  const el = document.getElementById('summary');
+  el.classList.remove('hidden');
+  if(data.summary){
+    const s = data.summary;
+    el.textContent = `Prompts ${s.prompts} | Gross ${s.gross_wpm} | Acc ${s.accuracy_pct}% | Net ${s.net_wpm}`;
+  }
+}
+
+document.getElementById('start').addEventListener('click', startBoss);
+document.getElementById('next').addEventListener('click', nextPrompt);
+</script>
+{% endblock %}
+
+

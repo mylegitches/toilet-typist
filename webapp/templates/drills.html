@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block content %}
+  <h2>Word Drills</h2>
+  <div class="panel">
+    <div id="setup">
+      <label>Rounds: <input id="rounds" type="number" min="1" max="20" value="10" /></label>
+      <button id="start" class="btn">Start</button>
+    </div>
+    <div id="play" class="hidden">
+      <div class="progress"><span id="round_label"></span></div>
+      <pre id="prompt" class="prompt"></pre>
+      <textarea id="typed" rows="3" class="input" placeholder="Type here and press Submit"></textarea>
+      <div class="row">
+        <button id="submit" class="btn">Submit</button>
+        <span id="timer" class="muted"></span>
+      </div>
+      <div id="result" class="muted"></div>
+    </div>
+    <div id="summary" class="hidden"></div>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let startTime = 0;
+function now(){ return performance.now(); }
+
+async function startDrills(){
+  const rounds = parseInt(document.getElementById('rounds').value || '10', 10);
+  await fetch('/api/drills/start', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({rounds})});
+  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('play').classList.remove('hidden');
+  await nextPrompt();
+}
+
+async function nextPrompt(){
+  const r = await fetch('/api/drills/next');
+  const data = await r.json();
+  if(data.done){ finishRun(); return; }
+  document.getElementById('round_label').textContent = `Round ${data.round}/${data.rounds}`;
+  document.getElementById('prompt').textContent = data.prompt;
+  document.getElementById('typed').value = '';
+  document.getElementById('typed').focus();
+  document.getElementById('result').textContent = '';
+  startTime = now();
+}
+
+async function submitPrompt(){
+  const typed = document.getElementById('typed').value;
+  const seconds = (now() - startTime) / 1000.0;
+  const r = await fetch('/api/drills/submit', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({typed, seconds})});
+  const data = await r.json();
+  const s = data.stats;
+  document.getElementById('result').textContent = `Time ${s.seconds.toFixed(1)}s | Gross ${s.gross_wpm.toFixed(1)} | Acc ${s.accuracy_pct.toFixed(1)}% | Net ${s.net_wpm.toFixed(1)} — ${data.comment}`;
+  if(data.done){
+    finishRun(data.summary);
+  } else {
+    await nextPrompt();
+  }
+}
+
+function finishRun(summary){
+  document.getElementById('play').classList.add('hidden');
+  const el = document.getElementById('summary');
+  el.classList.remove('hidden');
+  if(summary){ el.textContent = `Averages — Net ${summary.avg_net} | Acc ${summary.avg_acc}%`; }
+}
+
+document.getElementById('start').addEventListener('click', startDrills);
+document.getElementById('submit').addEventListener('click', submitPrompt);
+</script>
+{% endblock %}
+
+
